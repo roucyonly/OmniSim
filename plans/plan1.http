@@ -25,6 +25,9 @@ GET {{baseUrl}}/api/worlds
     client.log("world_id = " + client.global.get("world_id"));
 %}
 
+###
+@world_id=c00170f71d3a
+
 ### 4. 查看世界详情 (手动替换 {{world_id}})
 GET {{baseUrl}}/api/worlds/{{world_id}}
 
