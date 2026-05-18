@@ -1,0 +1,72 @@
+### === OmniSim Plan 1 验证 ===
+### 使用方法: 用 VS Code REST Client 插件或 IntelliJ HTTP Client 执行
+### 先启动服务器: cd server && uvicorn app.main:app --reload
+
+@baseUrl = http://localhost:8000
+
+### 1. 健康检查
+GET {{baseUrl}}/api/health
+
+### 2. 创建世界 (16x16 方格)
+POST {{baseUrl}}/api/worlds
+Content-Type: application/json
+
+{
+    "name": "华山派",
+    "grid_size": 16,
+    "theme": "huashan"
+}
+
+### 3. 查看所有世界
+GET {{baseUrl}}/api/worlds
+
+> {%
+    client.global.set("world_id", response.body[0].id);
+    client.log("world_id = " + client.global.get("world_id"));
+%}
+
+### 4. 查看世界详情 (手动替换 {{world_id}})
+GET {{baseUrl}}/api/worlds/{{world_id}}
+
+### 5. 查看世界地点 (应为空)
+GET {{baseUrl}}/api/worlds/{{world_id}}/locations
+
+### 6. 查看世界角色 (应为空)
+GET {{baseUrl}}/api/worlds/{{world_id}}/agents
+
+### 7. 推进 1 个 tick
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 8. 再推进 1 个 tick
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 9. 查看世界详情，确认 tick 从 0→2
+GET {{baseUrl}}/api/worlds/{{world_id}}
+
+### 10. 连续推进 12 个 tick，验证天切换 (day 1→2)
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 11. 确认 day=2, tick=1
+GET {{baseUrl}}/api/worlds/{{world_id}}
