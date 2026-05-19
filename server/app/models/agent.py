@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Float, ForeignKey
+from sqlalchemy import String, Integer, Float, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -25,6 +25,7 @@ class Agent(Base):
     core_motivation: Mapped[str] = mapped_column(String, default="")
     initial_memory: Mapped[str] = mapped_column(String, default="")
     template: Mapped[str] = mapped_column(String, default="弟子型")
+    personality_vector: Mapped[str] = mapped_column(Text, default="")
 
     # 数值属性 — YAML 维度
     health: Mapped[int] = mapped_column(Integer, default=100)

@@ -1,3 +1,4 @@
+import json
 import uuid
 from contextlib import asynccontextmanager
 
@@ -18,7 +19,7 @@ engines: dict[str, SimulationEngine] = {}
 
 AGENT_FIELDS = [
     "faction", "role", "template", "x", "y", "location_name",
-    "personality", "core_motivation", "initial_memory",
+    "personality", "core_motivation", "initial_memory", "personality_vector",
     "health", "inner_power", "sword_skill",
     "talent", "wisdom", "charisma", "perception", "luck",
     "energy", "hunger", "speed",
@@ -100,6 +101,10 @@ async def create_agent(
             kwargs[f] = body[f]
 
     agent = Agent(**kwargs)
+    # personality_vector 存为 JSON 字符串
+    pv = body.get("personality_vector")
+    if pv and isinstance(pv, dict):
+        agent.personality_vector = json.dumps(pv, ensure_ascii=False)
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
@@ -109,12 +114,19 @@ async def create_agent(
     for f in AGENT_FIELDS:
         val = getattr(agent, f, None)
         if val is not None:
-            state_kwargs[f] = val
+            if f == "personality_vector" and isinstance(val, str) and val:
+                state_kwargs[f] = json.loads(val)
+            else:
+                state_kwargs[f] = val
     if "template" not in state_kwargs:
         state_kwargs["template"] = body.get("template", "")
     if "initial_memory" in body:
         state_kwargs["initial_memory"] = body["initial_memory"]
-    engine.add_agent(AgentState(**state_kwargs))
+    if not state_kwargs.get("personality_vector"):
+        state_kwargs["personality_vector"] = body.get("personality_vector", {})
+
+    initial_rels = body.get("initial_relationships")
+    engine.add_agent(AgentState(**state_kwargs), initial_relationships=initial_rels)
 
     return _agent_to_out(agent, world_id)
 
@@ -217,7 +229,10 @@ async def get_current_tick(world_id: str, db: AsyncSession = Depends(get_db)):
             for f in AGENT_FIELDS:
                 val = getattr(a, f, None)
                 if val is not None:
-                    state_kwargs[f] = val
+                    if f == "personality_vector" and isinstance(val, str) and val:
+                        state_kwargs[f] = json.loads(val)
+                    else:
+                        state_kwargs[f] = val
             engine.add_agent(AgentState(**state_kwargs))
 
     agent_list = []
@@ -248,6 +263,7 @@ async def get_current_tick(world_id: str, db: AsyncSession = Depends(get_db)):
             energy=ag.state.energy,
             speed=ag.state.speed,
             action_desc=ag.state.last_action_desc,
+            emotion=ag.emotion.dominant_emotion,
         ))
 
     return TickResultOut(
@@ -275,7 +291,10 @@ async def manual_tick(world_id: str, db: AsyncSession = Depends(get_db)):
             for f in AGENT_FIELDS:
                 val = getattr(a, f, None)
                 if val is not None:
-                    state_kwargs[f] = val
+                    if f == "personality_vector" and isinstance(val, str) and val:
+                        state_kwargs[f] = json.loads(val)
+                    else:
+                        state_kwargs[f] = val
             engine.add_agent(AgentState(**state_kwargs))
 
     step_results = engine.tick()
@@ -313,6 +332,7 @@ async def manual_tick(world_id: str, db: AsyncSession = Depends(get_db)):
             energy=ag.state.energy if ag else 100,
             speed=ag.state.speed if ag else 2.0,
             action_desc=r.action_desc,
+            emotion=r.emotion if hasattr(r, "emotion") else "平静",
         ))
 
     return TickResultOut(
@@ -334,7 +354,16 @@ async def get_agent_memories(world_id: str, agent_id: str):
         raise HTTPException(status_code=404, detail="Agent not found in engine")
 
     return [
-        {"id": m.id, "tick": m.tick, "description": m.description, "importance": m.importance}
+        {
+            "id": m.id,
+            "tick": m.tick,
+            "description": m.description,
+            "importance": m.importance,
+            "emotion_tag": m.emotion_tag,
+            "involved_agents": m.involved_agents,
+            "location": m.location,
+            "gossip_worthy": m.gossip_worthy,
+        }
         for m in agent.memory.entries
     ]
 

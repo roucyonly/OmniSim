@@ -55,6 +55,7 @@ class AgentOut(BaseModel):
     energy: int = 100
     speed: float = 2.0
     action_desc: str = ""
+    emotion: str = "平静"
 
 
 class TickResultOut(BaseModel):

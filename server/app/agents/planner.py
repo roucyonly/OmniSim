@@ -58,17 +58,33 @@ DAILY_TEMPLATES: dict[str, dict[int, dict]] = {
 
 
 class Planner:
-    def generate_plan(self, template: str, agent_name: str = "") -> list[PlanAction]:
+    # 自由活动 tick，可被情感偏好覆盖
+    FREE_TICKS = {6, 9}
+
+    def generate_plan(self, template: str, agent_name: str = "",
+                      emotion_valence: float = 0.0) -> list[PlanAction]:
         tmpl = DAILY_TEMPLATES.get(template, DAILY_TEMPLATES["弟子型"])
-        return [
-            PlanAction(
+        plan = []
+        for tick, step in tmpl.items():
+            action = step["action"]
+            location = step.get("location")
+
+            # 情感影响自由活动
+            if tick in self.FREE_TICKS and action == "自由活动":
+                if emotion_valence < -0.3:
+                    action = "休息"
+                    location = "弟子精舍"
+                elif emotion_valence > 0.3:
+                    action = "闲逛"
+                    # 不改 location，留在原地更可能遇到人
+
+            plan.append(PlanAction(
                 tick=tick,
-                action=step["action"],
-                location=step.get("location"),
-                priority=self._action_priority(step["action"]),
-            )
-            for tick, step in tmpl.items()
-        ]
+                action=action,
+                location=location,
+                priority=self._action_priority(action),
+            ))
+        return plan
 
     def revise_plan(
         self,
