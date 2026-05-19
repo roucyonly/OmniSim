@@ -1,41 +1,67 @@
 theme:
   name: "笑傲江湖-华山风云MVP"
-  version: "1.0.0"
-  description: "用于验证‘骰子逻辑+日记脑补’核心玩法循环的华山派微缩箱庭场景"
+  version: "2.0.0"
+  description: "用于验证'骰子逻辑+情感+关系+日记脑补'核心玩法循环的华山派微缩箱庭场景"
 
   # ----------------------------------------------------------------
-  # 场景与地理索引（用于白天的寻路、遭遇判定及行动限制）
+  # 场景与地理索引
+  # 坐标基于 16×16 方格地图（详见 Plan 4）
   # ----------------------------------------------------------------
   locations:
-    - 华山大殿: 
+    - 华山大殿:
         type: "门派核心"
-        terrain: "室内"
+        terrain: "building"
+        position: [3, 5]
         allowed_actions: ["rest", "social", "sect_affairs"]
-    - 练武场: 
+    - 练武场:
         type: "修炼场"
-        terrain: "平原"
+        terrain: "plain"
+        position: [7, 3]
         allowed_actions: ["train_sword", "spar", "social"]
-    - 思过崖: 
+    - 思过崖:
         type: "禁闭地"
-        terrain: "险峰"
+        terrain: "mountain"
+        position: [9, 9]
         allowed_actions: ["meditate", "rest"]
         special_modifier: { continuous_buff: "sword_insight_up", depression_rate: 1.2 }
-    - 弟子精舍: 
+    - 弟子精舍:
         type: "日常居住"
-        terrain: "室内"
+        terrain: "building"
+        position: [3, 7]
         allowed_actions: ["sleep", "rest", "secret_chat", "write_diary"]
         special_modifier: { fatigue_recovery: 2.0, safety_index: 1.0 }
-    - 掌门卧房: 
+    - 掌门卧房:
         type: "私密居住"
-        terrain: "室内"
+        terrain: "building"
+        position: [5, 5]
         allowed_actions: ["sleep", "secret_chat", "cultivate_secret", "write_diary"]
-        special_modifier: { intruder_alert: true } # 岳不群在这里练辟邪剑谱最安全
+        special_modifier: { intruder_alert: true }
+    - 食堂:
+        type: "生活设施"
+        terrain: "building"
+        position: [9, 5]
+        allowed_actions: ["eat", "social"]
+    - 药园:
+        type: "资源产地"
+        terrain: "plain"
+        position: [9, 7]
+        allowed_actions: ["gather_herb", "rest"]
+    - 藏经阁:
+        type: "修炼场所"
+        terrain: "building"
+        position: [3, 9]
+        allowed_actions: ["study", "meditate"]
+    - 山门:
+        type: "出入口"
+        terrain: "plain"
+        position: [7, 11]
+        allowed_actions: ["patrol", "social"]
 
   # ----------------------------------------------------------------
-  # 系统核心元素（用于传统引擎的数值计算和大模型 Prompt 的变量注入）
+  # 系统核心元素
   # ----------------------------------------------------------------
   elements:
-    inner_power: 
+    inner_power:
       name: "内功体系"
       attributes: ["内力值", "经脉损耗度", "丹田储能"]
     martial_arts:
@@ -43,7 +69,7 @@ theme:
       skills: ["华山心法", "紫霞神功", "华山剑法", "玉女金针十三剑", "独孤九剑"]
 
   # ----------------------------------------------------------------
-  # 阵营与初始人际关系矩阵（用于行为树判定：是相互赠送还是直接开打）
+  # 阵营与初始人际关系矩阵
   # ----------------------------------------------------------------
   factions:
     - 华山派:
@@ -52,7 +78,7 @@ theme:
         default_rules: "严禁同门相残，尊师重道"
 
   # ----------------------------------------------------------------
-  # 剧本静态事件流（用于在特定时间 Tick 强行改变环境或往 AI 记忆里塞包）
+  # 剧本静态事件流
   # ----------------------------------------------------------------
   events_timeline:
     - { tick: 10, trigger: "timed", event: "岳不群考校弟子武功", location: "练武场" }
@@ -60,37 +86,136 @@ theme:
     - { trigger: "on_agent_depression_max", target: "令狐冲", event: "罚往思过崖面壁" }
 
   # ----------------------------------------------------------------
-  # Agent 人物卡（逻辑引擎读取数值，叙事引擎/API 读取人设与近期记忆）
+  # Agent 人物卡
   # ----------------------------------------------------------------
   templates:
+    # ===== T1 关键角色 =====
+
     - name: "岳不群"
       faction: "华山派"
-      role: "掌门/师傅"
-      status: { health: 100, inner_power: 85, sword_skill: 80 }
+      role: "掌门"
+      tier: 1
+      position: [3, 5]
+      location: "华山大殿"
       personality: "满口仁义道德，极度看重门派名誉，实则功利伪善"
+      personality_vector: { extraversion: 0.4, agreeableness: 0.3, conscientious: 0.9, openness: 0.4, stability: 0.8 }
       core_motivation: "华山称霸 > 道德伪装 > 师徒情谊"
+      status: { health: 100, inner_power: 85, sword_skill: 80, talent: 75, wisdom: 85, charisma: 60, perception: 70, luck: 50, energy: 80, hunger: 0, speed: 60 }
+      skills: ["华山剑法(大成)", "紫霞神功(秘传)"]
+      daily_template: "掌门型"
       initial_memory: "五岳剑派内部暗流涌动，嵩山派野心勃勃，我必须尽快找到让华山派变强的方法。"
+      initial_relationships:
+        - { target: "宁中则", type: "夫妻", trust: 60, intimacy: 50 }
+        - { target: "令狐冲", type: "师徒", trust: 40, intimacy: 30 }
+        - { target: "岳灵珊", type: "父女", trust: 70, intimacy: 60 }
 
     - name: "宁中则"
       faction: "华山派"
       role: "师娘"
-      status: { health: 100, inner_power: 70, sword_skill: 75 }
+      tier: 1
+      position: [5, 5]
+      location: "掌门卧房"
       personality: "刚正不阿，侠骨柔肠，极度护短，对弟子视如己出"
+      personality_vector: { extraversion: 0.6, agreeableness: 0.9, conscientious: 0.8, openness: 0.5, stability: 0.7 }
       core_motivation: "保护家人 = 维护正道 > 盲从丈夫"
+      status: { health: 100, inner_power: 70, sword_skill: 75, talent: 65, wisdom: 70, charisma: 75, perception: 65, luck: 55, energy: 80, hunger: 0, speed: 65 }
+      skills: ["华山剑法(精通)", "无双无对宁氏一剑"]
+      daily_template: "师娘型"
       initial_memory: "不群最近似乎压力很大，整天愁眉不展。冲儿这孩子虽然顽劣，但本性纯良，是个可造之材。"
+      initial_relationships:
+        - { target: "岳不群", type: "夫妻", trust: 70, intimacy: 55 }
+        - { target: "令狐冲", type: "师徒", trust: 80, intimacy: 70 }
+        - { target: "岳灵珊", type: "母女", trust: 85, intimacy: 80 }
 
     - name: "令狐冲"
       faction: "华山派"
       role: "大弟子"
-      status: { health: 100, inner_power: 35, sword_skill: 55 }
+      tier: 1
+      position: [7, 3]
+      location: "练武场"
       personality: "豁达洒脱，嗜酒如命，重情重义，反感繁文缛节"
+      personality_vector: { extraversion: 0.9, agreeableness: 0.8, conscientious: 0.3, openness: 0.9, stability: 0.7 }
       core_motivation: "逍遥自由 = 师门情谊 > 门派规则"
+      status: { health: 100, inner_power: 35, sword_skill: 55, talent: 80, wisdom: 50, charisma: 85, perception: 65, luck: 75, energy: 90, hunger: 0, speed: 75 }
+      skills: ["华山剑法(精通)", "独孤九剑(未习)"]
+      daily_template: "弟子型"
       initial_memory: "今天天气真好，可惜小师妹被师傅叫去练剑了。要是能偷偷下山去华阴县打几两好酒喝，那才是神仙日子。"
+      initial_relationships:
+        - { target: "岳不群", type: "师徒", trust: 70, intimacy: 40 }
+        - { target: "宁中则", type: "师徒", trust: 80, intimacy: 65 }
+        - { target: "岳灵珊", type: "师兄妹", trust: 85, intimacy: 80 }
+        - { target: "劳德诺", type: "同门", trust: 50, intimacy: 35 }
 
     - name: "岳灵珊"
       faction: "华山派"
       role: "小师妹"
-      status: { health: 100, inner_power: 20, sword_skill: 30 }
+      tier: 1
+      position: [7, 4]
+      location: "练武场"
       personality: "活泼开朗，娇生惯养，心思单纯，依赖大师哥"
+      personality_vector: { extraversion: 0.8, agreeableness: 0.7, conscientious: 0.5, openness: 0.7, stability: 0.6 }
       core_motivation: "追求新鲜感 = 依赖大师哥 > 刻苦修炼"
+      status: { health: 100, inner_power: 20, sword_skill: 30, talent: 45, wisdom: 35, charisma: 80, perception: 50, luck: 60, energy: 85, hunger: 0, speed: 55 }
+      skills: ["华山剑法(入门)", "泰山剑法(入门)"]
+      daily_template: "弟子型"
       initial_memory: "爹爹今天又凶我了，说我剑法练得一塌糊涂。待会儿一定要去找大师哥，让他带我去后山捉野兔子玩！"
+      initial_relationships:
+        - { target: "岳不群", type: "父女", trust: 75, intimacy: 65 }
+        - { target: "宁中则", type: "母女", trust: 85, intimacy: 80 }
+        - { target: "令狐冲", type: "师兄妹", trust: 90, intimacy: 85 }
+
+    # ===== T2 活跃角色 =====
+
+    - name: "劳德诺"
+      faction: "华山派"
+      role: "二弟子"
+      tier: 2
+      position: [3, 7]
+      location: "弟子精舍"
+      personality: "沉稳老练，表面忠厚，实为嵩山派卧底"
+      personality_vector: { extraversion: 0.4, agreeableness: 0.4, conscientious: 0.7, openness: 0.3, stability: 0.6 }
+      core_motivation: "完成左盟主交代的任务 > 自保 > 同门情谊"
+      status: { health: 100, inner_power: 30, sword_skill: 40, talent: 35, wisdom: 55, charisma: 45, perception: 55, luck: 40, energy: 75, hunger: 0, speed: 50 }
+      skills: ["华山剑法(熟练)"]
+      daily_template: "弟子型"
+      initial_memory: "左盟主让我继续潜伏华山，留意岳不群的一举一动。大师兄令狐冲虽然豪爽，但也不能太接近，以免暴露身份。"
+      initial_relationships:
+        - { target: "岳不群", type: "师徒", trust: 55, intimacy: 30 }
+        - { target: "令狐冲", type: "同门", trust: 45, intimacy: 35 }
+        - { target: "岳灵珊", type: "同门", trust: 40, intimacy: 25 }
+
+    - name: "梁发"
+      faction: "华山派"
+      role: "三弟子"
+      tier: 2
+      position: [4, 7]
+      location: "弟子精舍"
+      personality: "老实本分，勤恳练功，对师父忠心耿耿"
+      personality_vector: { extraversion: 0.3, agreeableness: 0.8, conscientious: 0.8, openness: 0.2, stability: 0.8 }
+      core_motivation: "勤练武功报效师门 > 安稳度日"
+      status: { health: 100, inner_power: 25, sword_skill: 35, talent: 30, wisdom: 40, charisma: 40, perception: 35, luck: 45, energy: 75, hunger: 0, speed: 45 }
+      skills: ["华山剑法(熟练)"]
+      daily_template: "弟子型"
+      initial_memory: "今天要好好练功，争取早日将华山剑法练到下一个境界。师父说过，勤能补拙。"
+      initial_relationships:
+        - { target: "岳不群", type: "师徒", trust: 70, intimacy: 35 }
+        - { target: "令狐冲", type: "同门", trust: 60, intimacy: 40 }
+        - { target: "劳德诺", type: "同门", trust: 55, intimacy: 40 }
+
+    - name: "高克明"
+      faction: "华山派"
+      role: "弟子"
+      tier: 2
+      position: [5, 7]
+      location: "弟子精舍"
+      personality: "性格急躁，争强好胜，对令狐冲既佩服又不服气"
+      personality_vector: { extraversion: 0.6, agreeableness: 0.3, conscientious: 0.5, openness: 0.4, stability: 0.3 }
+      core_motivation: "出人头地 > 证明自己 > 同门情谊"
+      status: { health: 100, inner_power: 20, sword_skill: 25, talent: 25, wisdom: 30, charisma: 35, perception: 30, luck: 35, energy: 70, hunger: 0, speed: 45 }
+      skills: ["华山剑法(入门)"]
+      daily_template: "弟子型"
+      initial_memory: "令狐冲大师兄又偷懒不练功了，偏偏剑法比我好那么多，真是不服气。今天一定要加倍练习！"
+      initial_relationships:
+        - { target: "岳不群", type: "师徒", trust: 65, intimacy: 25 }
+        - { target: "令狐冲", type: "同门", trust: 40, intimacy: 30 }
+        - { target: "梁发", type: "同门", trust: 55, intimacy: 35 }
