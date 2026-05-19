@@ -1,0 +1,178 @@
+### === OmniSim Plan 2 验证 ===
+### 先启动服务器: cd server && uvicorn app.main:app --reload
+
+@baseUrl = http://localhost:8000
+@world_id = {{world_id}}
+
+### 1. 健康检查
+GET {{baseUrl}}/api/health
+
+# ### 2. 创建世界
+# POST {{baseUrl}}/api/worlds
+# Content-Type: application/json
+
+# {
+#     "name": "华山派",
+#     "grid_size": 16,
+#     "theme": "huashan"
+# }
+
+### 3. 记录返回的 world_id，替换下面的值
+@world_id = 901b2599a44a
+
+### 4. 创建令狐冲 (T1)
+POST {{baseUrl}}/api/worlds/{{world_id}}/agents
+Content-Type: application/json
+
+{
+    "name": "令狐冲",
+    "tier": 1,
+    "faction": "华山派",
+    "role": "大弟子",
+    "template": "弟子型",
+    "x": 3,
+    "y": 7,
+    "location_name": "弟子精舍",
+    "personality": "豁达洒脱，嗜酒如命，重情重义，反感繁文缛节",
+    "core_motivation": "逍遥自由 = 师门情谊 > 门派规则",
+    "initial_memory": "今天天气真好，可惜小师妹被师傅叫去练剑了。要是能偷偷下山去华阴县打几两好酒喝，那才是神仙日子。",
+    "health": 100,
+    "inner_power": 35,
+    "sword_skill": 55,
+    "talent": 80,
+    "wisdom": 60,
+    "charisma": 75,
+    "perception": 55,
+    "luck": 70,
+    "speed": 3.0
+}
+
+### 5. 创建岳灵珊 (T1)
+POST {{baseUrl}}/api/worlds/{{world_id}}/agents
+Content-Type: application/json
+
+{
+    "name": "岳灵珊",
+    "tier": 1,
+    "faction": "华山派",
+    "role": "小师妹",
+    "template": "弟子型",
+    "x": 4,
+    "y": 7,
+    "location_name": "弟子精舍",
+    "personality": "活泼开朗，娇生惯养，心思单纯，依赖大师哥",
+    "core_motivation": "追求新鲜感 = 依赖大师哥 > 刻苦修炼",
+    "initial_memory": "爹爹今天又凶我了，说我剑法练得一塌糊涂。待会儿一定要去找大师哥，让他带我去后山捉野兔子玩！",
+    "health": 100,
+    "inner_power": 20,
+    "sword_skill": 30,
+    "talent": 45,
+    "wisdom": 40,
+    "charisma": 65,
+    "perception": 50,
+    "luck": 60,
+    "speed": 2.5
+}
+
+### 6. 创建岳不群 (T1)
+POST {{baseUrl}}/api/worlds/{{world_id}}/agents
+Content-Type: application/json
+
+{
+    "name": "岳不群",
+    "tier": 1,
+    "faction": "华山派",
+    "role": "掌门/师傅",
+    "template": "掌门型",
+    "x": 3,
+    "y": 5,
+    "location_name": "掌门卧房",
+    "personality": "满口仁义道德，极度看重门派名誉，实则功利伪善",
+    "core_motivation": "华山称霸 > 道德伪装 > 师徒情谊",
+    "initial_memory": "五岳剑派内部暗流涌动，嵩山派野心勃勃，我必须尽快找到让华山派变强的方法。",
+    "health": 100,
+    "inner_power": 85,
+    "sword_skill": 80,
+    "talent": 70,
+    "wisdom": 85,
+    "charisma": 70,
+    "perception": 80,
+    "luck": 50,
+    "speed": 2.0
+}
+
+### 7. 创建宁中则 (T1)
+POST {{baseUrl}}/api/worlds/{{world_id}}/agents
+Content-Type: application/json
+
+{
+    "name": "宁中则",
+    "tier": 1,
+    "faction": "华山派",
+    "role": "师娘",
+    "template": "师娘型",
+    "x": 4,
+    "y": 5,
+    "location_name": "掌门卧房",
+    "personality": "刚正不阿，侠骨柔肠，极度护短，对弟子视如己出",
+    "core_motivation": "保护家人 = 维护正道 > 盲从丈夫",
+    "initial_memory": "不群最近似乎压力很大，整天愁眉不展。冲儿这孩子虽然顽劣，但本性纯良，是个可造之材。",
+    "health": 100,
+    "inner_power": 70,
+    "sword_skill": 75,
+    "talent": 65,
+    "wisdom": 60,
+    "charisma": 60,
+    "perception": 65,
+    "luck": 55,
+    "speed": 2.0
+}
+
+### 8. 查看所有角色
+GET {{baseUrl}}/api/worlds/{{world_id}}/agents
+
+### 8.1 查看单个角色 (替换 agent_id)
+GET {{baseUrl}}/api/worlds/{{world_id}}/agents/REPLACE_AGENT_ID
+
+### 8.2 修改角色 (替换 agent_id)
+PATCH {{baseUrl}}/api/worlds/{{world_id}}/agents/ff2e49744971
+Content-Type: application/json
+
+{
+    "x": 4,
+    "y": 5
+}
+
+### 8.3 删除单个角色 (替换 agent_id)
+DELETE {{baseUrl}}/api/worlds/{{world_id}}/agents/REPLACE_AGENT_ID
+
+### 8.4 删除该世界所有角色 (MVP 专用)
+DELETE {{baseUrl}}/api/worlds/{{world_id}}/agents
+
+### 9. 推进 1 个 tick
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 10. 推进到卯时 (tick=3)
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 11. 查看令狐冲的记忆 (替换 agent_id)
+GET {{baseUrl}}/api/worlds/{{world_id}}/agents/REPLACE_AGENT_ID/memories
+
+### 12. 推进到未时 (tick=7，反思触发)
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+POST {{baseUrl}}/api/worlds/{{world_id}}/tick
+###
+GET {{baseUrl}}/api/worlds/{{world_id}}/tick
+
+### 13. 查看世界状态
+GET {{baseUrl}}/api/worlds/{{world_id}}
+
+### 14. 查看令狐冲记忆 (应有反思记录 + 骰子结果)
+GET {{baseUrl}}/api/worlds/{{world_id}}/agents/REPLACE_AGENT_ID/memories

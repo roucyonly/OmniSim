@@ -1,0 +1,96 @@
+theme:
+  name: "笑傲江湖-华山风云MVP"
+  version: "1.0.0"
+  description: "用于验证‘骰子逻辑+日记脑补’核心玩法循环的华山派微缩箱庭场景"
+
+  # ----------------------------------------------------------------
+  # 场景与地理索引（用于白天的寻路、遭遇判定及行动限制）
+  # ----------------------------------------------------------------
+  locations:
+    - 华山大殿: 
+        type: "门派核心"
+        terrain: "室内"
+        allowed_actions: ["rest", "social", "sect_affairs"]
+    - 练武场: 
+        type: "修炼场"
+        terrain: "平原"
+        allowed_actions: ["train_sword", "spar", "social"]
+    - 思过崖: 
+        type: "禁闭地"
+        terrain: "险峰"
+        allowed_actions: ["meditate", "rest"]
+        special_modifier: { continuous_buff: "sword_insight_up", depression_rate: 1.2 }
+    - 弟子精舍: 
+        type: "日常居住"
+        terrain: "室内"
+        allowed_actions: ["sleep", "rest", "secret_chat", "write_diary"]
+        special_modifier: { fatigue_recovery: 2.0, safety_index: 1.0 }
+    - 掌门卧房: 
+        type: "私密居住"
+        terrain: "室内"
+        allowed_actions: ["sleep", "secret_chat", "cultivate_secret", "write_diary"]
+        special_modifier: { intruder_alert: true } # 岳不群在这里练辟邪剑谱最安全
+
+  # ----------------------------------------------------------------
+  # 系统核心元素（用于传统引擎的数值计算和大模型 Prompt 的变量注入）
+  # ----------------------------------------------------------------
+  elements:
+    inner_power: 
+      name: "内功体系"
+      attributes: ["内力值", "经脉损耗度", "丹田储能"]
+    martial_arts:
+      name: "武学技能库"
+      skills: ["华山心法", "紫霞神功", "华山剑法", "玉女金针十三剑", "独孤九剑"]
+
+  # ----------------------------------------------------------------
+  # 阵营与初始人际关系矩阵（用于行为树判定：是相互赠送还是直接开打）
+  # ----------------------------------------------------------------
+  factions:
+    - 华山派:
+        allies: ["少林派", "武当派", "恒山派"]
+        enemies: ["日月神教", "嵩山派"]
+        default_rules: "严禁同门相残，尊师重道"
+
+  # ----------------------------------------------------------------
+  # 剧本静态事件流（用于在特定时间 Tick 强行改变环境或往 AI 记忆里塞包）
+  # ----------------------------------------------------------------
+  events_timeline:
+    - { tick: 10, trigger: "timed", event: "岳不群考校弟子武功", location: "练武场" }
+    - { tick: 30, trigger: "timed", event: "桃谷六仙闯华山", location: "华山大殿" }
+    - { trigger: "on_agent_depression_max", target: "令狐冲", event: "罚往思过崖面壁" }
+
+  # ----------------------------------------------------------------
+  # Agent 人物卡（逻辑引擎读取数值，叙事引擎/API 读取人设与近期记忆）
+  # ----------------------------------------------------------------
+  templates:
+    - name: "岳不群"
+      faction: "华山派"
+      role: "掌门/师傅"
+      status: { health: 100, inner_power: 85, sword_skill: 80 }
+      personality: "满口仁义道德，极度看重门派名誉，实则功利伪善"
+      core_motivation: "华山称霸 > 道德伪装 > 师徒情谊"
+      initial_memory: "五岳剑派内部暗流涌动，嵩山派野心勃勃，我必须尽快找到让华山派变强的方法。"
+
+    - name: "宁中则"
+      faction: "华山派"
+      role: "师娘"
+      status: { health: 100, inner_power: 70, sword_skill: 75 }
+      personality: "刚正不阿，侠骨柔肠，极度护短，对弟子视如己出"
+      core_motivation: "保护家人 = 维护正道 > 盲从丈夫"
+      initial_memory: "不群最近似乎压力很大，整天愁眉不展。冲儿这孩子虽然顽劣，但本性纯良，是个可造之材。"
+
+    - name: "令狐冲"
+      faction: "华山派"
+      role: "大弟子"
+      status: { health: 100, inner_power: 35, sword_skill: 55 }
+      personality: "豁达洒脱，嗜酒如命，重情重义，反感繁文缛节"
+      core_motivation: "逍遥自由 = 师门情谊 > 门派规则"
+      initial_memory: "今天天气真好，可惜小师妹被师傅叫去练剑了。要是能偷偷下山去华阴县打几两好酒喝，那才是神仙日子。"
+
+    - name: "岳灵珊"
+      faction: "华山派"
+      role: "小师妹"
+      status: { health: 100, inner_power: 20, sword_skill: 30 }
+      personality: "活泼开朗，娇生惯养，心思单纯，依赖大师哥"
+      core_motivation: "追求新鲜感 = 依赖大师哥 > 刻苦修炼"
+      initial_memory: "爹爹今天又凶我了，说我剑法练得一塌糊涂。待会儿一定要去找大师哥，让他带我去后山捉野兔子玩！"

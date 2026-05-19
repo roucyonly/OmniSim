@@ -1,72 +1,49 @@
 from dataclasses import dataclass, field
 
 from .time_system import TimeSystem
-
-
-@dataclass
-class AgentUpdate:
-    agent_id: str
-    name: str
-    x: int
-    y: int
-    status: str
-    action_desc: str = ""
-
-
-@dataclass
-class TickResult:
-    tick: int
-    day: int
-    time_of_day: str
-    period: str
-    agent_updates: list[AgentUpdate] = field(default_factory=list)
-    events: list[str] = field(default_factory=list)
+from ..agents.base import AgentBase, AgentState, StepResult
+from ..agents.planner import Planner, PlanAction
 
 
 class SimulationEngine:
     def __init__(self, current_tick: int = 0, current_day: int = 1):
         self.time_system = TimeSystem(current_tick, current_day)
-        self.agent_actions: dict[str, str] = {}  # agent_id -> action stub
+        self.agents: dict[str, AgentBase] = {}
 
-    def tick(self, agents: list[dict]) -> TickResult:
+    def add_agent(self, state: AgentState):
+        self.agents[state.id] = AgentBase(state)
+
+    def tick(self) -> list[StepResult]:
         day, tick = self.time_system.advance()
 
-        updates = []
-        for agent in agents:
-            action_desc = self._decide_action(agent)
-            updates.append(AgentUpdate(
-                agent_id=agent["id"],
-                name=agent["name"],
-                x=agent["x"],
-                y=agent["y"],
-                status=agent["status"],
-                action_desc=action_desc,
-            ))
+        if tick == 0:
+            for agent in self.agents.values():
+                agent.init_daily_plan()
 
-        return TickResult(
-            tick=tick,
-            day=day,
-            time_of_day=self.time_system.time_of_day,
-            period=self.time_system.period,
-            agent_updates=updates,
-        )
+        agent_list = list(self.agents.values())
+        planner = Planner()
 
-    def _decide_action(self, agent: dict) -> str:
-        period = self.time_system.period
-        status = agent.get("status", "idle")
+        # 确保所有 agent 都已初始化日程
+        for agent in agent_list:
+            if not agent._plan_initialized:
+                agent.init_daily_plan()
 
-        if status == "sleeping":
-            return "正在睡觉"
-        if period in ("深夜", "凌晨") and status == "idle":
-            return "正在睡觉"
-        if period == "上午":
-            return "在附近活动"
-        if period == "中午":
-            return "正在吃午饭"
-        if period in ("下午",):
-            return "正在练功"
-        if period == "傍晚":
-            return "正在吃晚饭"
-        if period == "夜间":
-            return "在休息"
-        return "无所事事"
+        # Pass 1: 先统一更新所有 agent 的 location_name，避免顺序处理导致 nearby 不一致
+        for agent in agent_list:
+            action = planner.get_action_for_tick(agent.plan, tick)
+            if action and action.location:
+                agent.state.location_name = action.location
+
+        # Pass 2: 基于统一的 location 判定 nearby，再执行 step
+        results = []
+        for agent in agent_list:
+            loc = agent.state.location_name
+            nearby = [
+                a for a in agent_list
+                if a.state.id != agent.state.id
+                and loc and a.state.location_name == loc
+            ]
+            result = agent.step(tick, nearby)
+            results.append(result)
+
+        return results
